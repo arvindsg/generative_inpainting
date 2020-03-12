@@ -131,24 +131,32 @@ class InpaintCAModel(Model):
     def build_graph_with_losses(
             self, FLAGS, batch_data, training=True, summary=False,
             reuse=False):
+        if FLAGS.annotated_bbox:
+            batch_data, annotation_data = batch_data
         if FLAGS.guided:
             batch_data, edge = batch_data
             edge = edge[:, :, :, 0:1] / 255.
             edge = tf.cast(edge > FLAGS.edge_threshold, tf.float32)
         batch_pos = batch_data / 127.5 - 1.
         # generate mask, 1 represents masked point
-        bbox = random_bbox(FLAGS)
-        regular_mask = bbox2mask(FLAGS, bbox, name='mask_c')
-        irregular_mask = brush_stroke_mask(FLAGS, name='mask_c')
-        mask = tf.cast(
-            tf.logical_or(
-                tf.cast(irregular_mask, tf.bool),
-                tf.cast(regular_mask, tf.bool),
-            ),
-            tf.float32
-        )
-
+        if not FLAGS.annotated_bbox:
+            bbox = random_bbox(FLAGS)
+            regular_mask = bbox2mask(FLAGS, bbox, name='mask_c')
+            irregular_mask = brush_stroke_mask(FLAGS, name='mask_c')
+            mask = tf.cast(
+                tf.logical_or(
+                    tf.cast(irregular_mask, tf.bool),
+                    tf.cast(regular_mask, tf.bool),
+                ),
+                tf.float32
+            )
+        else:
+            pass
+            
+        
+        mask=tf.Print(mask,[bbox,regular_mask,irregular_mask],message= "The values are:")
         batch_incomplete = batch_pos*(1.-mask)
+        batch_incomplete=tf.Print(batch_incomplete,[tf.shape(batch_incomplete),tf.shape(bbox),tf.shape(bbox[0]),tf.shape(regular_mask),tf.shape(irregular_mask)],message= "The shapes are:",summarize=10000)
         if FLAGS.guided:
             edge = edge * mask
             xin = tf.concat([batch_incomplete, edge], axis=3)

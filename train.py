@@ -100,3 +100,6 @@ if __name__ == "__main__":
     ])
     # launch training
     trainer.train()
+
+
+# from neuralgym.utils import logger
