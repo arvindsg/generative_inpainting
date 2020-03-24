@@ -9,7 +9,7 @@ parser.add_argument('--train_filename', default='./data_flist/train_shuffled.fli
                     help='The train filename.')
 parser.add_argument('--validation_filename', default='./data_flist/validation_shuffled.flist', type=str,
                     help='The validation filename.')
-parser.add_argument('--is_shuffled', default='1', type=int,
+parser.add_argument('--is_shuffled', default='0', type=int,
                     help='Needed to be shuffled')
 
 if __name__ == "__main__":
