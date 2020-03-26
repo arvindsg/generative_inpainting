@@ -33,9 +33,13 @@ if __name__ == "__main__":
     if FLAGS.guided:
         fnames = [(fname, fname[:-4] + '_edge.jpg') for fname in fnames]
         img_shapes = [img_shapes, img_shapes]
+    dtypes=tf.float32
+    if FLAGS.annotated_bbox:
+        dtypes=[tf.float32,tf.int32]
+        img_shapes=[img_shapes,[4]]
     data = ng.data.DataFromFNames(
-        fnames, img_shapes, random_crop=FLAGS.random_crop,
-        nthreads=FLAGS.num_cpus_per_job)
+        fnames, img_shapes,dtypes=dtypes, random_crop=FLAGS.random_crop,
+        nthreads=FLAGS.num_cpus_per_job,return_bbox=FLAGS.annotated_bbox,fnames_prefix=FLAGS.image_dir)
     images = data.data_pipeline(FLAGS.batch_size)
     # main model
     model = InpaintCAModel()
@@ -52,7 +56,7 @@ if __name__ == "__main__":
             static_fnames = val_fnames[i:i+1]
             static_images = ng.data.DataFromFNames(
                 static_fnames, img_shapes, nthreads=1,
-                random_crop=FLAGS.random_crop).data_pipeline(1)
+                random_crop=FLAGS.random_crop,return_bbox=FLAGS.annotated_bbox,fnames_prefix=FLAGS.image_dir).data_pipeline(1)
             static_inpainted_images = model.build_static_infer_graph(
                 FLAGS, static_images, name='static_view/%d' % i)
     # training settings

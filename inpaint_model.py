@@ -141,22 +141,23 @@ class InpaintCAModel(Model):
         # generate mask, 1 represents masked point
         if not FLAGS.annotated_bbox:
             bbox = random_bbox(FLAGS)
-            regular_mask = bbox2mask(FLAGS, bbox, name='mask_c')
-            irregular_mask = brush_stroke_mask(FLAGS, name='mask_c')
-            mask = tf.cast(
-                tf.logical_or(
-                    tf.cast(irregular_mask, tf.bool),
-                    tf.cast(regular_mask, tf.bool),
-                ),
-                tf.float32
-            )
         else:
-            pass
+            assert_op = tf.Assert(tf.equal(tf.slice(tf.shape(annotation_data),0,1), 1.), [annotation_data],name="Assert batch size 1")
+            with tf.control_dependencies([assert_op]):
+                bbox=annotation_data[0]
             
-        
-        mask=tf.Print(mask,[bbox,regular_mask,irregular_mask],message= "The values are:")
+        regular_mask = bbox2mask(FLAGS, bbox, name='mask_c')
+        irregular_mask = brush_stroke_mask(FLAGS, name='mask_c')
+        mask = tf.cast(
+            tf.logical_or(
+                tf.cast(irregular_mask, tf.bool),
+                tf.cast(regular_mask, tf.bool),
+            ),
+            tf.float32
+            )
+#         mask=tf.Print(mask,[bbox,regular_mask,irregular_mask],message= "The values are:")
         batch_incomplete = batch_pos*(1.-mask)
-        batch_incomplete=tf.Print(batch_incomplete,[tf.shape(batch_incomplete),tf.shape(bbox),tf.shape(bbox[0]),tf.shape(regular_mask),tf.shape(irregular_mask)],message= "The shapes are:",summarize=10000)
+#         batch_incomplete=tf.Print(batch_incomplete,[tf.shape(batch_incomplete),tf.shape(bbox),tf.shape(bbox[0]),tf.shape(regular_mask),tf.shape(irregular_mask)],message= "The shapes are:",summarize=10000)
         if FLAGS.guided:
             edge = edge * mask
             xin = tf.concat([batch_incomplete, edge], axis=3)
